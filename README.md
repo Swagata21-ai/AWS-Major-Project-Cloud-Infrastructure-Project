@@ -67,5 +67,4 @@ The project follows a **multi-tier architecture**:
 - Practical knowledge of **AWS infrastructure management**.
 - Best practices for **security, scalability, and monitoring**.
 - Real-world exposure to **enterprise-level cloud solutions**.
-   ```bash
-   git clone https://github.com/your-username/aws-cloud-infrastructure.git
+  
