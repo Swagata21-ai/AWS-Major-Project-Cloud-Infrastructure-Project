@@ -7,7 +7,7 @@ AWS Cloud Infrastructure Project – A hands-on deployment of a Financial Tracke
 This project demonstrates the design and deployment of a **Financial Tracker Application** on **Amazon Web Services (AWS)** using **Elastic Beanstalk**.  
 It showcases secure, scalable, and highly available cloud architecture with automated load balancing, monitoring, and storage integration.
 
-🔗 **Live Demo:** [Financial Tracker App](http://elasticapp.eba-chzm4pn4.us-east-1.elasticbeanstalk.com/)
+🔗 **Live Demo of Finacial Tracker from Elastic Beanstalk AWS Service:** [Financial Tracker App](http://elasticapp.eba-chzm4pn4.us-east-1.elasticbeanstalk.com/)  https://drive.google.com/file/d/1giIJB6hdtx38B1xVP5fiJu6Hl4xrFd4w/view?usp=sharing 
 
 ---
 
