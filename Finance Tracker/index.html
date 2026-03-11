@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+            --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --shadow-hard: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+            background-size: cover;
+            z-index: -1;
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--glass-border);
+            width: 95%;
+            max-width: 1200px;
+            margin: 30px auto;
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hard);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            font-weight: 400;
+            border-bottom: 2px solid var(--glass-border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            width: 100%;
+        }
+
+        #budget-alert {
+            display: none;
+            margin: 20px 0;
+            padding: 15px 20px;
+            border-radius: 15px;
+            background: var(--warning-gradient);
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(255, 75, 43, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #budget-alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: alertShine 2s infinite;
+        }
+
+        .alert-success {
+            background: var(--success-gradient);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .alert-warning {
+            background: var(--warning-gradient);
+            box-shadow: 0 5px 20px rgba(255, 75, 43, 0.3);
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes alertShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+        }
+
+        .btn-danger {
+            background: var(--warning-gradient);
+        }
+
+        .expenses-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .expenses-table th,
+        .expenses-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .expenses-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .expenses-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .expense-category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-Food { background: linear-gradient(45deg, #ff6b6b, #ee5a24); }
+        .category-Rent { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
+        .category-Travel { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .category-Entertainment { background: linear-gradient(45deg, #f093fb, #f5576c); }
+        .category-Utilities { background: linear-gradient(45deg, #4facfe, #00f2fe); }
+        .category-Healthcare { background: linear-gradient(45deg, #43e97b, #38f9d7); }
+        .category-Shopping { background: linear-gradient(45deg, #fa709a, #fee140); }
+        .category-Other { background: linear-gradient(45deg, #30cfd0, #330867); }
+
+        .delete-btn {
+            background: var(--warning-gradient);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(255, 75, 43, 0.3);
+        }
+
+        .notification {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .notification.success {
+            background: var(--success-gradient);
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+
+        .notification.warning {
+            background: var(--warning-gradient);
+            border-color: rgba(255, 75, 43, 0.3);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ff4b2b 0%, #ff6b6b 100%);
+            border-color: rgba(255, 75, 43, 0.5);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FinTrack Dashboard</h1>
+        
+        <div class="summary-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Spent</span>
+                <span class="stat-value" id="total-spent">$0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Budget Limit</span>
+                <span class="stat-value" id="budget-limit-display">$2000</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Remaining</span>
+                <span class="stat-value" id="remaining-budget">$2000</span>
+            </div>
+        </div>
+
+        <div id="budget-alert">⚠️ Budget exceeded!</div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Add Expense</h2>
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="expense-category">
+                        <option value="Food">Food</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <input type="text" id="expense-description" placeholder="Enter description">
+                </div>
+                <div class="input-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="expense-amount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="date" id="expense-date">
+                </div>
+                <button class="btn" style="width: 100%; margin-top: 10px;" onclick="addExpense()">Add Expense</button>
+            </div>
+
+            <div class="card">
+                <h2>Set Budget & Alerts</h2>
+                <div class="input-group">
+                    <label>Monthly Limit ($)</label>
+                    <input type="number" id="budget-input" value="2000" step="100">
+                </div>
+                <div class="input-group">
+                    <label>Warning Threshold (%)</label>
+                    <input type="number" id="warning-threshold" value="80" min="1" max="100">
+                </div>
+                <button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="updateBudget()">Update Budget</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 10px;" onclick="clearAllExpenses()">Clear All Expenses</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 25px;">
+            <h2>All Expenses</h2>
+            <div id="expenses-list">
+                <div style="text-align: center; opacity: 0.7; padding: 20px;">
+                    No expenses added yet. Start by adding your first expense!
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 25px;">
+            <h2>Spending Analysis</h2>
+            <div class="chart-container">
+                <canvas id="transactionChart"></canvas>
+            </div>
+        </div>
+
+        <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+    </div>
+
+    <script>
+        let expenses = [];
+        let expensesByCategory = {
+            'Food': 450,
+            'Rent': 1200,
+            'Travel': 300,
+            'Entertainment': 150,
+            'Utilities': 200
+        };
+        let budgetLimit = 2000;
+        let warningThreshold = 80;
+        let expenseIdCounter = 1;
+
+        // Initialize with some sample expenses
+        function initializeSampleExpenses() {
+            const today = new Date();
+            const sampleExpenses = [
+                { id: expenseIdCounter++, category: 'Food', description: 'Grocery Shopping', amount: 150, date: today.toISOString().split('T')[0] },
+                { id: expenseIdCounter++, category: 'Rent', description: 'Monthly Rent', amount: 1200, date: today.toISOString().split('T')[0] },
+                { id: expenseIdCounter++, category: 'Travel', description: 'Gas Station', amount: 60, date: today.toISOString().split('T')[0] },
+                { id: expenseIdCounter++, category: 'Entertainment', description: 'Movie Tickets', amount: 30, date: today.toISOString().split('T')[0] },
+                { id: expenseIdCounter++, category: 'Utilities', description: 'Electric Bill', amount: 120, date: today.toISOString().split('T')[0] }
+            ];
+            
+            expenses = sampleExpenses;
+            updateExpensesByCategory();
+        }
+
+        function updateExpensesByCategory() {
+            expensesByCategory = {};
+            expenses.forEach(expense => {
+                expensesByCategory[expense.category] = (expensesByCategory[expense.category] || 0) + expense.amount;
+            });
+        }
+
+        // Set today's date as default
+        document.getElementById('expense-date').valueAsDate = new Date();
+        const ctx = document.getElementById('transactionChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(expensesByCategory),
+                datasets: [{
+                    label: 'Monthly Expenses ($)',
+                    data: Object.values(expensesByCategory),
+                    backgroundColor: [
+                        'rgba(255, 107, 107, 0.8)',   // Food - Red
+                        'rgba(78, 205, 196, 0.8)',     // Rent - Teal
+                        'rgba(102, 126, 234, 0.8)',   // Travel - Blue
+                        'rgba(240, 147, 251, 0.8)',   // Entertainment - Pink
+                        'rgba(79, 172, 254, 0.8)',    // Utilities - Light Blue
+                        'rgba(67, 233, 123, 0.8)',    // Healthcare - Green
+                        'rgba(250, 112, 154, 0.8)',   // Shopping - Rose
+                        'rgba(48, 207, 208, 0.8)'     // Other - Cyan
+                    ],
+                    borderColor: [
+                        'rgba(255, 107, 107, 1)',
+                        'rgba(78, 205, 196, 1)',
+                        'rgba(102, 126, 234, 1)',
+                        'rgba(240, 147, 251, 1)',
+                        'rgba(79, 172, 254, 1)',
+                        'rgba(67, 233, 123, 1)',
+                        'rgba(250, 112, 154, 1)',
+                        'rgba(48, 207, 208, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { 
+                            color: 'white',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = '$' + context.parsed.toFixed(2);
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function updateUI() {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const remaining = budgetLimit - total;
+            const percentageUsed = (total / budgetLimit) * 100;
+
+            document.getElementById('total-spent').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('budget-limit-display').innerText = `$${budgetLimit.toFixed(2)}`;
+            document.getElementById('remaining-budget').innerText = `$${remaining.toFixed(2)}`;
+            
+            // Update remaining budget color based on threshold
+            const remainingElement = document.getElementById('remaining-budget');
+            if (remaining < 0) {
+                remainingElement.style.color = '#ff4b2b';
+                showAlert('danger', `Budget exceeded by $${Math.abs(remaining).toFixed(2)}!`);
+            } else if (percentageUsed >= warningThreshold) {
+                remainingElement.style.color = '#fee140';
+                showAlert('warning', `Warning: ${percentageUsed.toFixed(1)}% of budget used!`);
+            } else {
+                remainingElement.style.color = '#fff';
+            }
+
+            updateExpensesByCategory();
+            updateExpensesList();
+            
+            // Update chart
+            chart.data.labels = Object.keys(expensesByCategory);
+            chart.data.datasets[0].data = Object.values(expensesByCategory);
+            chart.update();
+        }
+
+        function addExpense() {
+            const category = document.getElementById('expense-category').value;
+            const description = document.getElementById('expense-description').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const date = document.getElementById('expense-date').value;
+            
+            if (!description) {
+                showAlert('error', 'Please enter a description for the expense.');
+                return;
+            }
+            
+            if (isNaN(amount) || amount <= 0) {
+                showAlert('error', 'Please enter a valid amount.');
+                return;
+            }
+            
+            if (!date) {
+                showAlert('error', 'Please select a date for the expense.');
+                return;
+            }
+
+            const newExpense = {
+                id: expenseIdCounter++,
+                category,
+                description,
+                amount,
+                date
+            };
+            
+            expenses.push(newExpense);
+            
+            // Clear form
+            document.getElementById('expense-description').value = '';
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('expense-date').valueAsDate = new Date();
+            
+            showAlert('success', `Expense of $${amount.toFixed(2)} added successfully!`);
+            updateUI();
+        }
+
+        function updateBudget() {
+            const newLimit = parseFloat(document.getElementById('budget-input').value);
+            const newThreshold = parseFloat(document.getElementById('warning-threshold').value);
+            
+            if (isNaN(newLimit) || newLimit <= 0) {
+                showAlert('error', 'Please enter a valid budget limit.');
+                return;
+            }
+            
+            if (isNaN(newThreshold) || newThreshold < 1 || newThreshold > 100) {
+                showAlert('error', 'Warning threshold must be between 1% and 100%.');
+                return;
+            }
+            
+            budgetLimit = newLimit;
+            warningThreshold = newThreshold;
+            
+            showAlert('success', `Budget updated to $${newLimit.toFixed(2)} with ${newThreshold}% warning threshold.`);
+            updateUI();
+        }
+
+        function deleteExpense(id) {
+            const expense = expenses.find(e => e.id === id);
+            if (expense) {
+                expenses = expenses.filter(e => e.id !== id);
+                showAlert('success', `Expense "${expense.description}" deleted.`);
+                updateUI();
+            }
+        }
+
+        function clearAllExpenses() {
+            if (expenses.length === 0) {
+                showAlert('warning', 'No expenses to clear.');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to clear all expenses? This action cannot be undone.')) {
+                expenses = [];
+                showAlert('success', 'All expenses cleared successfully.');
+                updateUI();
+            }
+        }
+
+        function updateExpensesList() {
+            const listContainer = document.getElementById('expenses-list');
+            
+            if (expenses.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; opacity: 0.7; padding: 20px;">
+                        No expenses added yet. Start by adding your first expense!
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort expenses by date (newest first)
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            let tableHTML = `
+                <table class="expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            sortedExpenses.forEach(expense => {
+                tableHTML += `
+                    <tr>
+                        <td>${formatDate(expense.date)}</td>
+                        <td><span class="expense-category-badge category-${expense.category}">${expense.category}</span></td>
+                        <td>${expense.description}</td>
+                        <td><strong>$${expense.amount.toFixed(2)}</strong></td>
+                        <td><button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            listContainer.innerHTML = tableHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('notification-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHTML = `
+                <div id="${alertId}" class="notification ${type}">
+                    <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', alertHTML);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                const alertElement = document.getElementById(alertId);
+                if (alertElement) {
+                    alertElement.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => alertElement.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        function triggerAlert() {
+            const alert = document.getElementById('budget-alert');
+            alert.style.display = 'block';
+            alert.classList.remove('shake');
+            void alert.offsetWidth; // trigger reflow
+            alert.classList.add('shake');
+        }
+
+        // Initialize the app
+        initializeSampleExpenses();
+        updateUI();
+    </script>
+</body>
+</html>
